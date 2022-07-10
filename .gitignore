@@ -1,3 +1,8 @@
+# Custom
+files/
+token.json
+categories.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
