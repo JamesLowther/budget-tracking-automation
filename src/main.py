@@ -9,6 +9,7 @@ from editing import edit
 parser = argparse.ArgumentParser(description='Process entries from bank statements.')
 parser.add_argument('-b', "--before", type=str, help="Only process entries before a certain date (MM-DD-YYYY). Default: none", default="")
 parser.add_argument('-a', "--after", type=str, help="Only process entries after a certain date (MM-DD-YYYY). Default: none", default="")
+parser.add_argument('-s', "--skip", type=str, help="Skip a data type. Either expenses or income. Default: none", default="")
 args = parser.parse_args()
 
 def main():
@@ -32,23 +33,29 @@ def main():
 
     print()
 
-    if new_withdrawl_indexes:
-        c.categorize(withdrawls, data_type="withdrawls")
-        edit(withdrawls, new_withdrawl_indexes, data_type="withdrawls")
+    if not args.skip == "expenses":
+        if new_withdrawl_indexes:
+            c.categorize(withdrawls, data_type="withdrawls")
+            edit(withdrawls, new_withdrawl_indexes, data_type="withdrawls")
 
-        print(f"{len(new_withdrawl_indexes)} entries to add to expenses.")
+            print(f"{len(new_withdrawl_indexes)} entries to add to expenses.")
 
+        else:
+            print("Nothing to add to expenses.")
     else:
-        print("Nothing to add to expenses.")
+        print("Skipping expenses.")
 
-    if new_deposit_indexes:
-        c.categorize(deposits, data_type="deposits")
-        edit(deposits, new_deposit_indexes, data_type="deposits")
+    if not args.skip == "income":
+        if new_deposit_indexes and not args.skip == "deposits":
+            c.categorize(deposits, data_type="deposits")
+            edit(deposits, new_deposit_indexes, data_type="deposits")
 
-        print(f"{len(new_deposit_indexes)} entries to add to income.")
+            print(f"{len(new_deposit_indexes)} entries to add to income.")
 
+        else:
+            print("Nothing to add to income.")
     else:
-        print("Nothing to add to income.")
+        print("Skipping income.")
 
     if (new_withdrawl_indexes or new_deposit_indexes) and input("\nContinue adding to sheet? [y/N]: ").lower() == "y":
         sheets.upload(withdrawls, data_type="withdrawls")
