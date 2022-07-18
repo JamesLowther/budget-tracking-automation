@@ -1,6 +1,9 @@
 import csv
 import os
 from datetime import datetime
+
+from sorting import sort
+
 class TDReader:
     FILE_PATH = "../files"
     def get_data(self):
@@ -17,8 +20,8 @@ class TDReader:
                 all_withdrawls += withdrawls
                 all_deposits += deposits
 
-        all_withdrawls.sort(key=lambda x: datetime.strptime(x[0], "%m-%d-%Y"))
-        all_deposits.sort(key=lambda x: datetime.strptime(x[0], "%m-%d-%Y"))
+        sort(all_withdrawls)
+        sort(all_deposits)
 
         return (all_withdrawls, all_deposits)
 

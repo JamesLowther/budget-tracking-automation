@@ -12,9 +12,19 @@ class Categorizer:
         with open(path, "r") as f:
             return json.loads(f.read())
 
-    def categorize(self, data, entry_type="withdrawls"):
+    def categorize(self, data, data_type="withdrawls"):
         categories = self._categories["withdrawls"]
-        if entry_type == "deposits":
+        if data_type == "deposits":
+            categories = self._categories["deposits"]
+
+        for row in data:
+            vendor = row[1]
+            category = self.find_category(vendor, categories)
+            row.append(category)
+
+    def remove_ignored(self, data, data_type="withdrawls"):
+        categories = self._categories["withdrawls"]
+        if data_type == "deposits":
             categories = self._categories["deposits"]
 
         indicies_to_remove = []
@@ -25,9 +35,6 @@ class Categorizer:
             ignore = self.check_ignored(vendor, categories)
             if ignore:
                 indicies_to_remove.append(i)
-            else:
-                category = self.find_category(vendor, categories)
-                row.append(category)
 
         a = 0
         for i in indicies_to_remove:
