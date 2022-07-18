@@ -1,5 +1,4 @@
 import argparse
-from html import entities
 from sheets import SheetsAPI
 
 from td import TDReader
@@ -51,7 +50,7 @@ def main():
     else:
         print("Nothing to add to income.")
 
-    if input("\nContinue adding to sheet? [y/N]: ").lower() == "y":
+    if (new_withdrawl_indexes or new_deposit_indexes) and input("\nContinue adding to sheet? [y/N]: ").lower() == "y":
         sheets.upload(withdrawls, data_type="withdrawls")
         sheets.upload(deposits, data_type="deposits")
 
