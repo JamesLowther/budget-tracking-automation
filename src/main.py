@@ -7,10 +7,10 @@ from filtering import filter_before, filter_after, filter_before_cutoff
 from editing import edit
 
 parser = argparse.ArgumentParser(description='Process entries from bank statements.')
-parser.add_argument('-b', "--before", type=str, help="Only process entries before a certain date (MM-DD-YYYY). Default: none", default="")
-parser.add_argument('-a', "--after", type=str, help="Only process entries after a certain date (MM-DD-YYYY). Default: none", default="")
-parser.add_argument('-s', "--skip", type=str, help="Skip a data type. Either expenses or income. Default: none", default="")
-parser.add_argument('-i', "--ignored", type=str, help="Print ignored data. Default: True", nargs="?", const=True, default=False)
+parser.add_argument('-b', "--before", type=str, help="Only process entries before a certain date (MM-DD-YYYY).", default="")
+parser.add_argument('-a', "--after", type=str, help="Only process entries after a certain date (MM-DD-YYYY).", default="")
+parser.add_argument('-s', "--skip", type=str, help="Skip a data type.", choices=["expenses", "income"], default="")
+parser.add_argument('-i', "--ignored", help="Print ignored CSV data.", action="store_true")
 args = parser.parse_args()
 
 def main():
