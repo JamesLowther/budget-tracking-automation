@@ -3,7 +3,8 @@ import json
 import os
 
 class Categorizer:
-    def __init__(self):
+    def __init__(self, data_type):
+        self._data_type = data_type
         self._categories = self.read_category_file()
 
     def read_category_file(self):
@@ -12,20 +13,16 @@ class Categorizer:
         with open(path, "r") as f:
             return json.loads(f.read())
 
-    def categorize(self, data, data_type="withdrawls"):
-        categories = self._categories["withdrawls"]
-        if data_type == "deposits":
-            categories = self._categories["deposits"]
+    def categorize(self, data):
+        categories = self._categories[self._data_type]
 
         for row in data:
             vendor = row[1]
             category = self.find_category(vendor, categories)
-            row.append(category)
+            row.insert(-1, category)
 
-    def remove_ignored(self, data, data_type="withdrawls"):
-        categories = self._categories["withdrawls"]
-        if data_type == "deposits":
-            categories = self._categories["deposits"]
+    def remove_ignored(self, data):
+        categories = self._categories[self._data_type]
 
         indicies_to_remove = []
 

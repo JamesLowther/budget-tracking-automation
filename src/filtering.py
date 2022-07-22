@@ -1,6 +1,8 @@
 from datetime import datetime
 import re
 
+CUTOFF_DATE = "06-22-2022"
+
 def remove_before(element, after):
     return datetime.strptime(element[0], "%m-%d-%Y") > datetime.strptime(after, "%m-%d-%Y")
 
@@ -24,3 +26,8 @@ def filter_after(after, withdrawls, deposits):
         print("before argument not in form MM-DD-YYYY. Ignoring.")
 
     return (withdrawls, deposits)
+
+def filter_before_cutoff(data):
+    new_data = list(filter(lambda x: remove_before(x, CUTOFF_DATE), data))
+
+    return new_data

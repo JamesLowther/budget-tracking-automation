@@ -1,150 +1,138 @@
+from dataclasses import dataclass
 import pygsheets
 import os
 from datetime import datetime
 
 from sorting import sort
+from filtering import filter_before_cutoff
 
 class SheetsAPI:
-    SHEET = "Copy of Budget Tracking Tool"
+    SHEET = "Budget Tracking Tool"
     EXPENSES_WORKSHEET = "Expenses"
     INCOME_WORKSHEET = "Income"
 
     DATA_OFFSET = 7
 
-    def __init__(self):
-        print(f"Pulling data from {self.SHEET}... ", end="", flush=True)
+    _gc = None
+    _sh = None
 
-        token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.json")
-        self._gc = pygsheets.authorize(service_account_file=token_path)
-        self._sh = self._gc.open(self.SHEET)
+    def __init__(self, data_type):
+        self._data_type = data_type
 
-        self._expenses_wks = None
-        self._income_wks = None
+        if SheetsAPI._gc is None:
+            print(f"Pulling data from {SheetsAPI.SHEET}... ", end="", flush=True)
 
+            token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.json")
+            SheetsAPI._gc = pygsheets.authorize(service_account_file=token_path)
+            SheetsAPI._sh = self._gc.open(SheetsAPI.SHEET)
+
+            print("Done.")
+
+        self._wks = None
+
+        title = SheetsAPI.EXPENSES_WORKSHEET if self._data_type == "withdrawls" else SheetsAPI.INCOME_WORKSHEET
         for wks in self._sh:
-            if wks.title == self.EXPENSES_WORKSHEET:
-                self._expenses_wks = wks
+            if wks.title == title:
+                self._wks = wks
 
-            if wks.title == self.INCOME_WORKSHEET:
-                self._income_wks = wks
+        self._cutoff_offset = None
+        self._insert_row = None
 
-            if self._expenses_wks and self._income_wks:
-                break
+        self._data = self.initialize_data()
 
-        self._expenses_data = self.initialize_data(self._expenses_wks)
-        self._income_data = self.initialize_data(self._income_wks)
-
-        self._expenses_insert_row = None
-        self._income_insert_row = None
-
-        print("Done.")
-
-    def initialize_data(self, worksheet):
-        data = list(worksheet)[7:]
+    def initialize_data(self):
+        data = list(self._wks)[SheetsAPI.DATA_OFFSET:]
 
         formatted_data = []
 
         for d in data:
+            comment = ""
+            if d[5].lower() == "manual":
+                comment = "manual"
+
             formatted_data.append(
                 (
-                    d[1],
-                    d[2],
-                    d[3].lstrip("$").replace(",", "").strip(" ")
+                    d[1],                                               # Date.
+                    d[2],                                               # Vendor.
+                    d[3].lstrip("$").replace(",", "").strip(" "),       # Price.
+                    comment                                             # Comment.
                 )
             )
 
-        return formatted_data
+        filtered_formatted_data = filter_before_cutoff(formatted_data)
 
-    def get_data(self, data_type):
-        data = []
+        self._cutoff_offset = len(formatted_data) - len(filtered_formatted_data)
 
-        if data_type == "withdrawls":
-            data = self._expenses_data
+        return filtered_formatted_data
 
-        elif data_type == "deposits":
-            data = self._income_data
+    def format_data(self, data):
+        data_temp = []
 
-        return data
+        for d in data:
+            data_temp.append(
+                (
+                    d[0],
+                    d[1],
+                    d[2],
+                    ""
+                )
+            )
 
-    def get_last_row(self, data_type="withdrawls"):
-        data = self.get_data(data_type)
+        return set(data_temp)
 
-        if not data:
-            return None
+    def set_insert_row(self, new_data, merged_data):
+        smallest_date = datetime.strptime(new_data[0][0], "%m-%d-%Y")
 
-        return len(data) + self.DATA_OFFSET
+        i = 0
+        for d in merged_data:
+            d_date = datetime.strptime(d[0], "%m-%d-%Y")
 
+            if d_date > smallest_date:
+                print("WHAT!")
+                exit(1)
 
-    def match_row(self, row, data_type="withdrawls"):
-        data = self.get_data(data_type)
+            elif d_date == smallest_date:
+                break
+            i += 1
 
-        try:
-            i = data.index(tuple(row)[:3])
-        except ValueError:
-            i = None
+        self._insert_row = SheetsAPI.DATA_OFFSET + self._cutoff_offset + i + 1
 
-        return i
+        return merged_data[i:]
 
-    def set_insert_row(self, row, data_type="withdrawls"):
-        if data_type == "withdrawls":
-            self._expenses_insert_row = row
+    def merge(self, data):
+        print(f"Merging {self._data_type}... ", end="")
 
-        elif data_type == "deposits":
-            self._income_insert_row = row
+        data_set = self.format_data(data)
+        sheet_set = set(self._data)
 
-    def merge(self, data, data_type="withdrawls"):
-        print(f"Merging {data_type}... ", end="")
+        new_data = list(data_set - sheet_set)
+        sort(new_data)
 
-        start_match = self.match_row(data[0], data_type=data_type)
-        sheet_data = self.get_data(data_type=data_type)
-
-        if start_match is None:
-            start_match = len(sheet_data)
-            self.set_insert_row(self.get_last_row(data_type=data_type) + 1, data_type=data_type)
-
-        else:
-            self.set_insert_row(start_match + self.DATA_OFFSET + 1, data_type=data_type)
-
-        sheet_data = sheet_data[start_match:]
-
-        data_set = set([tuple(x) for x in data])
-        sheet_data_set = set(sheet_data)
-
-        newly_added = data_set - sheet_data_set
-        newly_added = list(newly_added)
-        sort(newly_added)
-
-
-        merged = data_set.union(sheet_data_set)
-        merged = list(merged)
-        sort(merged)
+        merged_data = list(data_set.union(sheet_set))
+        sort(merged_data)
 
         new_indexes = []
-        for row in newly_added:
-            new_indexes.append(merged.index(row))
 
-        merged = [list(x) for x in merged]
+        if new_data != []:
+            merged_data = self.set_insert_row(new_data, merged_data)
+
+            for row in new_data:
+                new_indexes.append(merged_data.index(row))
+
+        merged_data = [list(x) for x in merged_data]
 
         print("Done.")
 
-        return (merged, new_indexes)
+        return (merged_data, new_indexes)
 
-    def upload(self, data, data_type="withdrawls"):
-        print(f"Uploading {data_type}... ", end="")
-
-        wks = None
-        insert_row = None
-        if data_type == "withdrawls":
-            wks = self._expenses_wks
-            insert_row = self._expenses_insert_row
-        elif data_type == "deposits":
-            wks = self._income_wks
-            insert_row = self._income_insert_row
+    def upload(self, data):
+        print(f"\nStarting insert at row {self._insert_row}.")
+        print(f"Uploading {self._data_type}... ", end="", flush=True)
 
         i = 0
         for row in data:
-            wks.update_row(
-                insert_row + i,
+            self._wks.update_row(
+                self._insert_row + i,
                 row,
                 col_offset = 1
             )
