@@ -7,13 +7,14 @@ from sorting import sort
 class TDReader:
     FILE_PATH = "../files"
     def get_data(self):
-        all_files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FILE_PATH))
+        print("Reading CSV files... ", end="", flush=True)
+        all_files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), TDReader.FILE_PATH))
 
         all_withdrawls = []
         all_deposits = []
 
         for name in all_files:
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FILE_PATH, name)
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), TDReader.FILE_PATH, name)
             if os.path.isfile(path) and name.split(".")[-1] == "csv":
                 withdrawls, deposits = self.read_csv(path)
 
@@ -22,6 +23,8 @@ class TDReader:
 
         sort(all_withdrawls)
         sort(all_deposits)
+
+        print("Done.")
 
         return (all_withdrawls, all_deposits)
 

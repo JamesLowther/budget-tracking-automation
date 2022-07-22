@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description='Process entries from bank statemen
 parser.add_argument('-b', "--before", type=str, help="Only process entries before a certain date (MM-DD-YYYY). Default: none", default="")
 parser.add_argument('-a', "--after", type=str, help="Only process entries after a certain date (MM-DD-YYYY). Default: none", default="")
 parser.add_argument('-s', "--skip", type=str, help="Skip a data type. Either expenses or income. Default: none", default="")
+parser.add_argument('-i', "--ignored", type=str, help="Print ignored data. Default: True", nargs="?", const=True, default=False)
 args = parser.parse_args()
 
 def main():
@@ -28,8 +29,9 @@ def main():
     withdrawls_c = Categorizer("withdrawls")
     deposits_c = Categorizer("deposits")
 
-    withdrawls_c.remove_ignored(withdrawls)
-    deposits_c.remove_ignored(deposits)
+    withdrawls_c.remove_ignored(withdrawls, args.ignored)
+    deposits_c.remove_ignored(deposits, args.ignored)
+    print()
 
     withdrawls_sheets = SheetsAPI("withdrawls")
     deposits_sheets = SheetsAPI("deposits")
