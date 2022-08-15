@@ -33,11 +33,15 @@ def main():
     deposits_c.remove_ignored(deposits, args.ignored)
     print()
 
+    if args.ignored:
+        input("Press ENTER to continue...")
+
     withdrawls_sheets = SheetsAPI("withdrawls")
     deposits_sheets = SheetsAPI("deposits")
 
     withdrawls, new_withdrawl_indexes = withdrawls_sheets.merge(withdrawls)
     deposits, new_deposit_indexes = deposits_sheets.merge(deposits)
+    print(deposits)
 
     print()
 
