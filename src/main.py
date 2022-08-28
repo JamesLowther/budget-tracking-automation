@@ -41,7 +41,6 @@ def main():
 
     withdrawls, new_withdrawl_indexes = withdrawls_sheets.merge(withdrawls)
     deposits, new_deposit_indexes = deposits_sheets.merge(deposits)
-    print(deposits)
 
     print()
 
