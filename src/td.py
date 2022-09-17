@@ -42,7 +42,7 @@ class TDReader:
         for row in data:
             temp = [
                 row[0].replace("/", "-"),
-                " ".join(row[1].split())
+                " ".join(row[1].split()).replace(",", "")
             ]
 
             if row[2] != "":
