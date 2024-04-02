@@ -2,9 +2,11 @@ import argparse
 from sheets import SheetsAPI
 
 from td import TDReader
+from pc import PCReader
 from categorize import Categorizer
 from filtering import filter_before, filter_after, filter_before_cutoff
 from editing import edit
+from sorting import sort
 
 parser = argparse.ArgumentParser(description='Process entries from bank statements.')
 parser.add_argument('-b', "--before", type=str, help="Only process entries before a certain date (MM-DD-YYYY).", default="")
@@ -14,8 +16,19 @@ parser.add_argument('-i', "--ignored", help="Print ignored CSV data.", action="s
 args = parser.parse_args()
 
 def main():
-    e = TDReader()
-    withdrawls, deposits = e.get_data()
+    # Get TD
+    td = TDReader()
+    td_withdrawls, td_deposits = td.get_data()
+
+    # Get PC
+    pc = PCReader()
+    pc_withdrawls, pc_deposits = pc.get_data()
+
+    withdrawls = td_withdrawls + pc_withdrawls
+    deposits = td_deposits + pc_deposits
+
+    sort(withdrawls)
+    sort(deposits)
 
     withdrawls = filter_before_cutoff(withdrawls)
     deposits = filter_before_cutoff(deposits)

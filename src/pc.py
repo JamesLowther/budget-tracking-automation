@@ -1,20 +1,20 @@
 import csv
 import os
-from datetime import datetime
 
 from sorting import sort
 
-class TDReader:
-    FILE_PATH = "../td-files"
+class PCReader:
+    FILE_PATH = "../pc-files"
+
     def get_data(self):
-        print("Reading TD CSV files... ", end="", flush=True)
-        all_files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), TDReader.FILE_PATH))
+        print("Reading PC CSV files... ", end="", flush=True)
+        all_files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), PCReader.FILE_PATH))
 
         all_withdrawls = []
         all_deposits = []
 
         for name in all_files:
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), TDReader.FILE_PATH, name)
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), PCReader.FILE_PATH, name)
             if os.path.isfile(path) and name.split(".")[-1] == "csv":
                 withdrawls, deposits = self.read_csv(path)
 
@@ -40,17 +40,16 @@ class TDReader:
         deposits = []
 
         for row in data:
+            if row[0] == "Description":
+                continue
+
             temp = [
-                row[0].replace("/", "-"),
-                " ".join(row[1].split()).replace(",", "")
+                row[3].replace("/", "-"),
+                " ".join(row[0].split()).replace(",", "")
             ]
 
-            if row[2] != "":
-                temp.append(row[2])
+            if row[1] == "PURCHASE":
+                temp.append("{0:.2f}".format(abs(float(row[5]))))
                 withdrawls.append(temp)
-
-            else:
-                temp.append(row[3])
-                deposits.append(temp)
 
         return (withdrawls, deposits)
